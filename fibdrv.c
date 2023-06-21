@@ -47,6 +47,72 @@ static long long fib_sequence(long long k)
     return result;
 }
 
+static long long fib_fastd(long long n)
+{
+    if (n < 2) {
+        return n;
+    } else if (n == 2) {
+        return 1;
+    }
+
+    unsigned int k = 0;
+    if (n % 2) {
+        k = (n - 1) / 2;
+        return fib_fastd(k + 1) * fib_fastd(k + 1) +
+               fib_fastd(k) * fib_fastd(k);
+    } else {
+        k = n / 2;
+        return fib_fastd(k) * (2 * fib_fastd(k + 1) - fib_fastd(k));
+    }
+}
+
+static long long fib_fastd_bit(long long n)
+{
+    unsigned int h = 0;
+    for (unsigned int i = n; i; ++h, i >>= 1)
+        ;
+
+    long long a = 0;
+    long long b = 1;
+    for (int j = h - 1; j >= 0; --j) {
+        long long c = a * (2 * b - a);
+        long long d = a * a + b * b;
+
+        if ((n >> j) & 1) {
+            a = d;
+            b = c + d;
+        } else {
+            a = c;
+            b = d;
+        }
+    }
+
+    return a;
+}
+
+static long long fib_fastd_clz(long long n)
+{
+    // clzll: count leading zero
+    unsigned int h = sizeof(long long) * 8 - __builtin_clzll(n);
+
+    long long a = 0;
+    long long b = 1;
+    for (unsigned int mask = 1LL << (h - 1); mask; mask >>= 1) {
+        long long c = a * (2 * b - a);
+        long long d = a * a + b * b;
+
+        if (mask & n) {
+            a = d;
+            b = c + d;
+        } else {
+            a = c;
+            b = d;
+        }
+    }
+
+    return a;
+}
+
 static int fib_open(struct inode *inode, struct file *file)
 {
     if (!mutex_trylock(&fib_mutex)) {
@@ -68,7 +134,7 @@ static ssize_t fib_read(struct file *file,
                         size_t size,
                         loff_t *offset)
 {
-    return (ssize_t) fib_sequence(*offset);
+    return (ssize_t) fib_fastd_clz(*offset);
 }
 
 /* write operation is skipped */
