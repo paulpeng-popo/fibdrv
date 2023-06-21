@@ -115,12 +115,24 @@ static long long fib_fastd_clz(long long n)
     return a;
 }
 
-static long long fib_time_proxy(long long k)
+static long long fib_time_proxy(long long k, size_t size)
 {
+    long long result;
     kt = ktime_get();
-    long long result = fib_fastd_clz(k);
+    switch (size) {
+    case 1:
+        result = fib_sequence(k);
+        break;
+    case 2:
+        result = fib_fastd_bit(k);
+        break;
+    case 3:
+        result = fib_fastd_clz(k);
+        break;
+    default:
+        return -EINVAL;
+    }
     kt = ktime_sub(ktime_get(), kt);
-
     return result;
 }
 
@@ -145,7 +157,11 @@ static ssize_t fib_read(struct file *file,
                         size_t size,
                         loff_t *offset)
 {
-    return (ssize_t) fib_time_proxy(*offset);
+    // size = 1, use fib_sequence
+    // size = 2, use fib_fastd
+    // size = 3, use fib_fastd_bit
+    // size = 4, use fib_fastd_clz
+    return (ssize_t) fib_time_proxy(*offset, size);
 }
 
 /* write operation is skipped */
