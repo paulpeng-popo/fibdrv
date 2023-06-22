@@ -23,12 +23,16 @@ int main()
 
     for (int i = 0; i <= offset; i++) {
         lseek(fd, i, SEEK_SET);
+
+        // naive
         long long sz = read(fd, buf, 1);
         long long kt = write(fd, write_buf, 1);
 
+        // fastd
         long long sz2 = read(fd, buf, 2);
         long long kt2 = write(fd, write_buf, 1);
 
+        // fastd_clz
         long long sz3 = read(fd, buf, 3);
         long long kt3 = write(fd, write_buf, 1);
 

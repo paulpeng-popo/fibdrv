@@ -51,25 +51,6 @@ static long long fib_sequence(long long k)
 
 static long long fib_fastd(long long n)
 {
-    if (n < 2) {
-        return n;
-    } else if (n == 2) {
-        return 1;
-    }
-
-    unsigned int k = 0;
-    if (n % 2) {
-        k = (n - 1) / 2;
-        return fib_fastd(k + 1) * fib_fastd(k + 1) +
-               fib_fastd(k) * fib_fastd(k);
-    } else {
-        k = n / 2;
-        return fib_fastd(k) * (2 * fib_fastd(k + 1) - fib_fastd(k));
-    }
-}
-
-static long long fib_fastd_bit(long long n)
-{
     unsigned int h = 0;
     for (unsigned int i = n; i; ++h, i >>= 1)
         ;
@@ -79,13 +60,12 @@ static long long fib_fastd_bit(long long n)
     for (int j = h - 1; j >= 0; --j) {
         long long c = a * (2 * b - a);
         long long d = a * a + b * b;
+        a = c;
+        b = d;
 
         if ((n >> j) & 1) {
             a = d;
             b = c + d;
-        } else {
-            a = c;
-            b = d;
         }
     }
 
@@ -102,13 +82,12 @@ static long long fib_fastd_clz(long long n)
     for (unsigned int mask = 1LL << (h - 1); mask; mask >>= 1) {
         long long c = a * (2 * b - a);
         long long d = a * a + b * b;
+        a = c;
+        b = d;
 
         if (mask & n) {
             a = d;
             b = c + d;
-        } else {
-            a = c;
-            b = d;
         }
     }
 
@@ -124,7 +103,7 @@ static long long fib_time_proxy(long long k, size_t size)
         result = fib_sequence(k);
         break;
     case 2:
-        result = fib_fastd_bit(k);
+        result = fib_fastd(k);
         break;
     case 3:
         result = fib_fastd_clz(k);
@@ -159,8 +138,7 @@ static ssize_t fib_read(struct file *file,
 {
     // size = 1, use fib_sequence
     // size = 2, use fib_fastd
-    // size = 3, use fib_fastd_bit
-    // size = 4, use fib_fastd_clz
+    // size = 3, use fib_fastd_clz
     return (ssize_t) fib_time_proxy(*offset, size);
 }
 

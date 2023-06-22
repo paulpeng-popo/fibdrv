@@ -18,7 +18,7 @@ $(GIT_HOOKS):
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
-	$(RM) client out data.txt fibonacci.png
+	$(RM) client out *.txt *.png
 load:
 	sudo insmod $(TARGET_MODULE).ko
 unload:
@@ -28,11 +28,7 @@ client: client.c
 	$(CC) -o $@ $^
 
 time: all
-	$(MAKE) unload
-	$(MAKE) load
-	sudo ./client
-	@gnuplot draw.gp
-	$(MAKE) unload
+	sh ./myperf.sh
 
 PRINTF = env printf
 PASS_COLOR = \e[32;01m
