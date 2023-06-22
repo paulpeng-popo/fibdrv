@@ -48,6 +48,7 @@ static long long fib_fastd(long long n)
 
     long long a = 0;
     long long b = 1;
+
     for (int j = 63 - 1; j >= 0; j--) {
         long long c = a * ((b << 1) - a);
         long long d = a * a + b * b;
