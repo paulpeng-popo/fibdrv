@@ -71,7 +71,7 @@ static long long fib_fastd_clz(long long n)
     long long a = 0;
     long long b = 1;
 
-    long long mask = 63 - __builtin_clzll(n);
+    long long mask = 1LL << (63 - __builtin_clzll(n));
     for (; mask; mask >>= 1) {
         long long c = a * ((b << 1) - a);
         long long d = a * a + b * b;

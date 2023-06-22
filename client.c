@@ -9,8 +9,8 @@
 
 int main()
 {
-    char buf[10];
-    char write_buf[10];
+    char buf[3];
+    char write_buf[1];
     int offset = 92; /* TODO: try test something bigger than the limit */
 
     int fd = open(FIB_DEV, O_RDWR);
@@ -35,22 +35,7 @@ int main()
         long long kt3 = write(fd, write_buf, 1);
 
         printf("%d %lld %lld %lld\n", i, kt, kt2, kt3);
-
-        // printf("Reading from " FIB_DEV
-        //        " at offset %d, returned the sequence "
-        //        "%lld.\n",
-        //        i, sz);
-        // printf("Time: %lld (ns).\n", kt);
     }
-
-    // for (int i = offset; i >= 0; i--) {
-    //     lseek(fd, i, SEEK_SET);
-    //     sz = read(fd, buf, 1);
-    //     printf("Reading from " FIB_DEV
-    //            " at offset %d, returned the sequence "
-    //            "%lld.\n",
-    //            i, sz);
-    // }
 
     close(fd);
     return 0;
