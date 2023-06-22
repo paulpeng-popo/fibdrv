@@ -11,7 +11,7 @@ int main()
 {
     char buf[10];
     char write_buf[10];
-    int offset = 100; /* TODO: try test something bigger than the limit */
+    int offset = 92; /* TODO: try test something bigger than the limit */
 
     int fd = open(FIB_DEV, O_RDWR);
     if (fd < 0) {

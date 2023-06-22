@@ -28,42 +28,33 @@ static ktime_t kt;
 
 static long long fib_sequence(long long k)
 {
-    /* FIXME: C99 variable-length array (VLA) is not allowed in Linux kernel. */
-    long long *f = kmalloc((k + 1) * sizeof(long long), GFP_KERNEL);
-    if (!f) {
-        printk(KERN_ALERT "Failed to allocate memory\n");
-        return -ENOMEM;
-    }
+    long long f[2] = {0, 1};
 
-    long long result = 0;
-
-    f[0] = 0;
-    f[1] = 1;
+    if (k < 2)
+        return f[k];
 
     for (int i = 2; i <= k; i++) {
-        f[i] = f[i - 1] + f[i - 2];
+        // use bit operation to replace mod operation
+        f[i & 1] = f[0] + f[1];
     }
-    result = f[k];
 
-    kfree(f);
-    return result;
+    return f[k & 1];
 }
 
 static long long fib_fastd(long long n)
 {
-    unsigned int h = 0;
-    for (unsigned int i = n; i; ++h, i >>= 1)
-        ;
+    if (n < 2)
+        return n;
 
     long long a = 0;
     long long b = 1;
-    for (int j = h - 1; j >= 0; --j) {
+    for (int j = 63 - 1; j >= 0; j--) {
         long long c = a * ((b << 1) - a);
         long long d = a * a + b * b;
         a = c;
         b = d;
 
-        if ((n >> j) & 1) {
+        if ((n >> j) & 1LL) {
             a = d;
             b = c + d;
         }
@@ -74,12 +65,13 @@ static long long fib_fastd(long long n)
 
 static long long fib_fastd_clz(long long n)
 {
-    unsigned int h = sizeof(long long) * 8 - __builtin_clzll(n);
+    if (n < 2)
+        return n;
 
     long long a = 0;
     long long b = 1;
 
-    unsigned long long mask = 1ULL << (h - 1);
+    long long mask = 63 - __builtin_clzll(n);
     for (; mask; mask >>= 1) {
         long long c = a * ((b << 1) - a);
         long long d = a * a + b * b;

@@ -7,13 +7,13 @@
 # sudo init 6
 
 CPUID=5
-# MASK=$((1 << $CPUID))
-# MASK=$((0xfff & ~$MASK))
-# MASK=`printf "%x" $MASK`
+MASK=$((1 << $CPUID))
+MASK=$((0xfff & ~$MASK))
+MASK=`printf "%x" $MASK`
 ORIG_ASLR=`cat /proc/sys/kernel/randomize_va_space`
 ORIG_GOV=`cat /sys/devices/system/cpu/cpu$CPUID/cpufreq/scaling_governor`
 ORIG_TURBO=`cat /sys/devices/system/cpu/intel_pstate/no_turbo`
-# ORIG_IRQ=`cat /proc/irq/$CPUID/smp_affinity`
+ORIG_IRQ=`cat /proc/irq/$CPUID/smp_affinity`
 
 # echo "MASK: $MASK"
 # echo "ASLR: $ORIG_ASLR"
@@ -31,7 +31,13 @@ sudo sh -c "echo 1 > /sys/devices/system/cpu/intel_pstate/no_turbo"
 sudo sh -c "echo performance > /sys/devices/system/cpu/cpu$CPUID/cpufreq/scaling_governor"
 
 # Disable CPU for handling interrupts
-# sudo sh -c "echo $MASK > /proc/irq/$CPUID/smp_affinity"
+for file in /proc/irq/*/smp_affinity; do
+    var=0x$(cat "$file")
+    var=$((var & 0xfdf))
+    var=`printf "%x" $var`
+    sudo sh -c "echo $var > $file" 2> /dev/null
+done
+sudo sh -c "echo $MASK > /proc/irq/$CPUID/smp_affinity"
 
 # Load the module and run the client
 make unload
@@ -44,4 +50,4 @@ make unload
 sudo sh -c "echo $ORIG_ASLR > /proc/sys/kernel/randomize_va_space"
 sudo sh -c "echo $ORIG_GOV > /sys/devices/system/cpu/cpu$CPUID/cpufreq/scaling_governor"
 sudo sh -c "echo $ORIG_TURBO > /sys/devices/system/cpu/intel_pstate/no_turbo"
-# sudo sh -c "echo $ORIG_IRQ > /proc/irq/$CPUID/smp_affinity"
+sudo sh -c "echo $ORIG_IRQ > /proc/irq/$CPUID/smp_affinity"
