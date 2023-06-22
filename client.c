@@ -19,8 +19,6 @@ int main()
         exit(1);
     }
 
-    FILE *fp = fopen("data.txt", "w");
-
     for (int i = 0; i <= offset; i++) {
         lseek(fd, i, SEEK_SET);
 
@@ -36,7 +34,7 @@ int main()
         long long sz3 = read(fd, buf, 3);
         long long kt3 = write(fd, write_buf, 1);
 
-        fprintf(fp, "%d %lld %lld %lld\n", i, kt, kt2, kt3);
+        printf("%d %lld %lld %lld\n", i, kt, kt2, kt3);
 
         // printf("Reading from " FIB_DEV
         //        " at offset %d, returned the sequence "
@@ -44,8 +42,6 @@ int main()
         //        i, sz);
         // printf("Time: %lld (ns).\n", kt);
     }
-
-    fclose(fp);
 
     // for (int i = offset; i >= 0; i--) {
     //     lseek(fd, i, SEEK_SET);

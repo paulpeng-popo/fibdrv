@@ -16,9 +16,9 @@ ORIG_TURBO=`cat /sys/devices/system/cpu/intel_pstate/no_turbo`
 # ORIG_IRQ=`cat /proc/irq/$CPUID/smp_affinity`
 
 # echo "MASK: $MASK"
-echo "ASLR: $ORIG_ASLR"
-echo "Governor: $ORIG_GOV"
-echo "Turbo: $ORIG_TURBO"
+# echo "ASLR: $ORIG_ASLR"
+# echo "Governor: $ORIG_GOV"
+# echo "Turbo: $ORIG_TURBO"
 # echo "IRQ: $ORIG_IRQ"
 
 # Disable ASLR
@@ -36,8 +36,8 @@ sudo sh -c "echo performance > /sys/devices/system/cpu/cpu$CPUID/cpufreq/scaling
 # Load the module and run the client
 make unload
 make load
-sudo taskset -c $CPUID ./client
-gnuplot draw.gp
+python3 scripts/statisic_plot.py -cpu=$CPUID
+gnuplot -e "filename='scripts/data.txt'" scripts/draw.gp
 make unload
 
 # Restore original settings

@@ -18,7 +18,7 @@ $(GIT_HOOKS):
 
 clean:
 	$(MAKE) -C $(KDIR) M=$(PWD) clean
-	$(RM) client out *.txt *.png
+	$(RM) client out *png scripts/data.txt
 load:
 	sudo insmod $(TARGET_MODULE).ko
 unload:

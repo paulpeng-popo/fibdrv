@@ -58,7 +58,7 @@ static long long fib_fastd(long long n)
     long long a = 0;
     long long b = 1;
     for (int j = h - 1; j >= 0; --j) {
-        long long c = a * (2 * b - a);
+        long long c = a * ((b << 1) - a);
         long long d = a * a + b * b;
         a = c;
         b = d;
@@ -74,13 +74,14 @@ static long long fib_fastd(long long n)
 
 static long long fib_fastd_clz(long long n)
 {
-    // clzll: count leading zero
     unsigned int h = sizeof(long long) * 8 - __builtin_clzll(n);
 
     long long a = 0;
     long long b = 1;
-    for (unsigned int mask = 1LL << (h - 1); mask; mask >>= 1) {
-        long long c = a * (2 * b - a);
+
+    unsigned long long mask = 1ULL << (h - 1);
+    for (; mask; mask >>= 1) {
+        long long c = a * ((b << 1) - a);
         long long d = a * a + b * b;
         a = c;
         b = d;
