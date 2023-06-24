@@ -35,7 +35,7 @@ client: client.c
 	fi
 	$(CC) -o $@ $^ -DMAX_FIB_K=$(FIB_K)
 
-time: all
+time: clean all
 	sh ./myperf.sh
 
 PRINTF = env printf

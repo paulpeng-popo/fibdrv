@@ -43,7 +43,7 @@ sudo sh -c "echo $MASK > /proc/irq/$CPUID/smp_affinity"
 make unload
 make load
 python3 scripts/statisic_plot.py -cpu=$CPUID
-gnuplot -e "filename='scripts/data.txt'" scripts/draw.gp
+gnuplot -e "filename='scripts/data.txt'" scripts/time_cmp.gp
 make unload
 
 # Restore original settings

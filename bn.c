@@ -240,43 +240,43 @@ void bn_lshift(const bn *p, unsigned int bits, bn *q)
     }
 }
 
-char *bn_to_dec_str(const bn *n)
-{
-    size_t str_size = (size_t) ((n->size) * DIGIT_BITS) / 3 + 2;
+// char *bn_to_dec_str(const bn *n)
+// {
+//     size_t str_size = (size_t) ((n->size) * DIGIT_BITS) / 3 + 2;
 
-    if (n->size == 0) {
-        char *str = kmalloc(2, GFP_KERNEL);
-        str[0] = '0';
-        str[1] = '\0';
-        return str;
-    } else {
-        char *s = kmalloc(str_size, GFP_KERNEL);
-        char *p = s;
+//     if (n->size == 0) {
+//         char *str = kmalloc(2, GFP_KERNEL);
+//         str[0] = '0';
+//         str[1] = '\0';
+//         return str;
+//     } else {
+//         char *s = kmalloc(str_size, GFP_KERNEL);
+//         char *p = s;
 
-        memset(s, '0', str_size - 1);
-        s[str_size - 1] = '\0';
+//         memset(s, '0', str_size - 1);
+//         s[str_size - 1] = '\0';
 
-        /* n.digits[0] contains least significant bits */
-        for (int i = n->size - 1; i >= 0; i--) {
-            /* walk through every bit of bn */
-            for (unsigned long long d = 1ULL << 63; d; d >>= 1) {
-                /* binary -> decimal string */
-                int carry = !!(d & n->digits[i]);
-                for (int j = str_size - 2; j >= 0; j--) {
-                    s[j] += s[j] - '0' + carry;
-                    carry = (s[j] > '9');
-                    if (carry)
-                        s[j] -= 10;
-                }
-            }
-        }
-        // skip leading zero
-        while (p[0] == '0' && p[1] != '\0') {
-            p++;
-        }
-        if (n->sign)
-            *(--p) = '-';
-        memmove(s, p, strlen(p) + 1);
-        return s;
-    }
-}
+//         /* n.digits[0] contains least significant bits */
+//         for (int i = n->size - 1; i >= 0; i--) {
+//             /* walk through every bit of bn */
+//             for (unsigned long long d = 1ULL << 63; d; d >>= 1) {
+//                 /* binary -> decimal string */
+//                 int carry = !!(d & n->digits[i]);
+//                 for (int j = str_size - 2; j >= 0; j--) {
+//                     s[j] += s[j] - '0' + carry;
+//                     carry = (s[j] > '9');
+//                     if (carry)
+//                         s[j] -= 10;
+//                 }
+//             }
+//         }
+//         // skip leading zero
+//         while (p[0] == '0' && p[1] != '\0') {
+//             p++;
+//         }
+//         if (n->sign)
+//             *(--p) = '-';
+//         memmove(s, p, strlen(p) + 1);
+//         return s;
+//     }
+// }

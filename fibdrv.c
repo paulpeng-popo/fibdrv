@@ -25,67 +25,67 @@ static DEFINE_MUTEX(fib_mutex);
 static int major = 0, minor = 0;
 static ktime_t kt;
 
-static uint64_t fib_sequence(uint64_t k)
-{
-    uint64_t f[2] = {0, 1};
+// static uint64_t fib_sequence(uint64_t k)
+// {
+//     uint64_t f[2] = {0, 1};
 
-    if (k < 2)
-        return f[k];
+//     if (k < 2)
+//         return f[k];
 
-    for (int i = 2; i <= k; i++) {
-        // use bit operation to replace mod operation
-        f[i & 1] = f[0] + f[1];
-    }
+//     for (int i = 2; i <= k; i++) {
+//         // use bit operation to replace mod operation
+//         f[i & 1] = f[0] + f[1];
+//     }
 
-    return f[k & 1];
-}
+//     return f[k & 1];
+// }
 
-static uint64_t fib_fastd(uint64_t n)
-{
-    if (n < 2)
-        return n;
+// static uint64_t fib_fastd(uint64_t n)
+// {
+//     if (n < 2)
+//         return n;
 
-    uint64_t a = 0;
-    uint64_t b = 1;
+//     uint64_t a = 0;
+//     uint64_t b = 1;
 
-    for (int j = 63 - 1; j >= 0; j--) {
-        uint64_t c = a * ((b << 1) - a);
-        uint64_t d = a * a + b * b;
-        a = c;
-        b = d;
+//     for (int j = 63 - 1; j >= 0; j--) {
+//         uint64_t c = a * ((b << 1) - a);
+//         uint64_t d = a * a + b * b;
+//         a = c;
+//         b = d;
 
-        if ((n >> j) & 1LL) {
-            a = d;
-            b = c + d;
-        }
-    }
+//         if ((n >> j) & 1LL) {
+//             a = d;
+//             b = c + d;
+//         }
+//     }
 
-    return a;
-}
+//     return a;
+// }
 
-static uint64_t fib_fastd_clz(uint64_t n)
-{
-    if (n < 2)
-        return n;
+// static uint64_t fib_fastd_clz(uint64_t n)
+// {
+//     if (n < 2)
+//         return n;
 
-    uint64_t a = 0;
-    uint64_t b = 1;
+//     uint64_t a = 0;
+//     uint64_t b = 1;
 
-    uint64_t mask = 1LL << (63 - __builtin_clzll(n));
-    for (; mask; mask >>= 1) {
-        uint64_t c = a * ((b << 1) - a);
-        uint64_t d = a * a + b * b;
-        a = c;
-        b = d;
+//     uint64_t mask = 1LL << (63 - __builtin_clzll(n));
+//     for (; mask; mask >>= 1) {
+//         uint64_t c = a * ((b << 1) - a);
+//         uint64_t d = a * a + b * b;
+//         a = c;
+//         b = d;
 
-        if (mask & n) {
-            a = d;
-            b = c + d;
-        }
-    }
+//         if (mask & n) {
+//             a = d;
+//             b = c + d;
+//         }
+//     }
 
-    return a;
-}
+//     return a;
+// }
 
 static void fib_bignum(uint64_t n, bn *fib)
 {

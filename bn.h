@@ -34,4 +34,4 @@ void bn_mul(const bn *a, const bn *b, bn *p);
 /* B = A * A */
 void bn_sqr(const bn *a, bn *b);
 
-char *bn_to_dec_str(const bn *n);
+// char *bn_to_dec_str(const bn *n);
