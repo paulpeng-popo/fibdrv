@@ -1,4 +1,5 @@
 #include <fcntl.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -7,11 +8,53 @@
 
 #define FIB_DEV "/dev/fibonacci"
 
+#define BUF_SIZE 64
+#define DIGIT_BITS 64
+
+char *bn_to_dec_str(const unsigned long long *digits, size_t size)
+{
+    size_t str_size = (size_t) (size * DIGIT_BITS) / 3 + 1;
+
+    if (size == 0) {
+        char *str = malloc(2);
+        str[0] = '0';
+        str[1] = '\0';
+        return str;
+    } else {
+        char *s = malloc(str_size);
+        char *p = s;
+
+        memset(s, '0', str_size - 1);
+        s[str_size - 1] = '\0';
+
+        /* n.digits[0] contains least significant bits */
+        for (int i = size - 1; i >= 0; i--) {
+            /* walk through every bit of bn */
+            for (unsigned long long d = 1ULL << 63; d; d >>= 1) {
+                /* binary -> decimal string */
+                int carry = !!(d & digits[i]);
+                for (int j = str_size - 2; j >= 0; j--) {
+                    s[j] += s[j] - '0' + carry;
+                    carry = (s[j] > '9');
+                    if (carry)
+                        s[j] -= 10;
+                }
+            }
+        }
+        // skip leading zero
+        while (p[0] == '0' && p[1] != '\0') {
+            p++;
+        }
+        memmove(s, p, strlen(p) + 1);
+        return s;
+    }
+}
+
 int main()
 {
-    char buf[3];
-    char write_buf[1];
-    int offset = 92; /* TODO: try test something bigger than the limit */
+    unsigned long long buf[BUF_SIZE];
+    // char write_buf[1];
+    int offset = MAX_FIB_K;
 
     int fd = open(FIB_DEV, O_RDWR);
     if (fd < 0) {
@@ -21,20 +64,11 @@ int main()
 
     for (int i = 0; i <= offset; i++) {
         lseek(fd, i, SEEK_SET);
-
-        // naive
-        long long sz = read(fd, buf, 1);
-        long long kt = write(fd, write_buf, 1);
-
-        // fastd
-        long long sz2 = read(fd, buf, 2);
-        long long kt2 = write(fd, write_buf, 1);
-
-        // fastd_clz
-        long long sz3 = read(fd, buf, 3);
-        long long kt3 = write(fd, write_buf, 1);
-
-        printf("%d %lld %lld %lld\n", i, kt, kt2, kt3);
+        long long sz = read(fd, buf, sizeof(buf));
+        char *str = bn_to_dec_str(buf, sz);
+        printf("%d %s\n", i, str);
+        // printf("%d %lld\n", i, sz);
+        // printf("%d %lld %lld %lld\n", i, kt, kt2, kt3);
     }
 
     close(fd);

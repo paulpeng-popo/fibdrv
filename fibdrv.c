@@ -8,6 +8,8 @@
 #include <linux/module.h>
 #include <linux/mutex.h>
 
+#include "bn.h"
+
 MODULE_LICENSE("Dual MIT/GPL");
 MODULE_AUTHOR("National Cheng Kung University, Taiwan");
 MODULE_DESCRIPTION("Fibonacci engine driver");
@@ -15,10 +17,7 @@ MODULE_VERSION("0.1");
 
 #define DEV_FIBONACCI_NAME "fibonacci"
 
-/* MAX_LENGTH is set to 92 because
- * ssize_t can't fit the number > 92
- */
-#define MAX_LENGTH 92
+#define MAX_LENGTH 1000000
 
 static dev_t fib_dev = 0;
 static struct class *fib_class;
@@ -26,9 +25,9 @@ static DEFINE_MUTEX(fib_mutex);
 static int major = 0, minor = 0;
 static ktime_t kt;
 
-static long long fib_sequence(long long k)
+static uint64_t fib_sequence(uint64_t k)
 {
-    long long f[2] = {0, 1};
+    uint64_t f[2] = {0, 1};
 
     if (k < 2)
         return f[k];
@@ -41,17 +40,17 @@ static long long fib_sequence(long long k)
     return f[k & 1];
 }
 
-static long long fib_fastd(long long n)
+static uint64_t fib_fastd(uint64_t n)
 {
     if (n < 2)
         return n;
 
-    long long a = 0;
-    long long b = 1;
+    uint64_t a = 0;
+    uint64_t b = 1;
 
     for (int j = 63 - 1; j >= 0; j--) {
-        long long c = a * ((b << 1) - a);
-        long long d = a * a + b * b;
+        uint64_t c = a * ((b << 1) - a);
+        uint64_t d = a * a + b * b;
         a = c;
         b = d;
 
@@ -64,18 +63,18 @@ static long long fib_fastd(long long n)
     return a;
 }
 
-static long long fib_fastd_clz(long long n)
+static uint64_t fib_fastd_clz(uint64_t n)
 {
     if (n < 2)
         return n;
 
-    long long a = 0;
-    long long b = 1;
+    uint64_t a = 0;
+    uint64_t b = 1;
 
-    long long mask = 1LL << (63 - __builtin_clzll(n));
+    uint64_t mask = 1LL << (63 - __builtin_clzll(n));
     for (; mask; mask >>= 1) {
-        long long c = a * ((b << 1) - a);
-        long long d = a * a + b * b;
+        uint64_t c = a * ((b << 1) - a);
+        uint64_t d = a * a + b * b;
         a = c;
         b = d;
 
@@ -88,25 +87,50 @@ static long long fib_fastd_clz(long long n)
     return a;
 }
 
-static long long fib_time_proxy(long long k, size_t size)
+static void fib_bignum(uint64_t n, bn *fib)
 {
-    long long result;
-    kt = ktime_get();
-    switch (size) {
-    case 1:
-        result = fib_sequence(k);
-        break;
-    case 2:
-        result = fib_fastd(k);
-        break;
-    case 3:
-        result = fib_fastd_clz(k);
-        break;
-    default:
-        return -EINVAL;
+    if (unlikely(n <= 2)) {
+        if (n == 0)
+            bn_zero(fib);
+        else
+            bn_set_u32(fib, 1);
+        return;
     }
+
+    bn *a1 = fib; /* Use output param fib as a1 */
+
+    bn_t a0, tmp, a;
+    bn_init_u32(a0, 0); /*  a0 = 0 */
+    bn_set_u32(a1, 1);  /*  a1 = 1 */
+    bn_init(tmp);       /* tmp = 0 */
+    bn_init(a);
+
+    /* Start at second-highest bit set. */
+    for (uint64_t k = ((uint64_t) 1) << (62 - __builtin_clzll(n)); k; k >>= 1) {
+        /* Both ways use two squares, two adds, one multipy and one shift. */
+        bn_lshift(a0, 1, a); /* a03 = a0 * 2 */
+        bn_add(a, a1, a);    /*   ... + a1 */
+        bn_sqr(a1, tmp);     /* tmp = a1^2 */
+        bn_sqr(a0, a0);      /* a0 = a0 * a0 */
+        bn_add(a0, tmp, a0); /*  ... + a1 * a1 */
+        bn_mul(a1, a, a1);   /*  a1 = a1 * a */
+        if (k & n) {
+            bn_swap(a1, a0);    /*  a1 <-> a0 */
+            bn_add(a0, a1, a1); /*  a1 += a0 */
+        }
+    }
+    /* Now a1 (alias of output parameter fib) = F[n] */
+
+    bn_free(a0);
+    bn_free(tmp);
+    bn_free(a);
+}
+
+static void fib_time_proxy(uint64_t k, bn *result)
+{
+    kt = ktime_get();
+    fib_bignum(k, result);
     kt = ktime_sub(ktime_get(), kt);
-    return result;
 }
 
 static int fib_open(struct inode *inode, struct file *file)
@@ -130,10 +154,19 @@ static ssize_t fib_read(struct file *file,
                         size_t size,
                         loff_t *offset)
 {
-    // size = 1, use fib_sequence
-    // size = 2, use fib_fastd
-    // size = 3, use fib_fastd_clz
-    return (ssize_t) fib_time_proxy(*offset, size);
+    bn_t fib = BN_INITIALIZER;
+    fib_time_proxy(*offset, fib);
+    uint32_t len = fib->size;
+    // char *str_num = bn_to_dec_str(fib);
+    // pr_info("fibdrv: %lld %s\n", *offset, str_num);
+    size_t num_of_bytes = sizeof(uint64_t) * len / sizeof(char);
+    if (copy_to_user(buf, fib->digits, num_of_bytes)) {
+        printk(KERN_ALERT "fibdrv: copy_to_user failed\n");
+        return -EFAULT;
+    }
+    bn_free(fib);
+
+    return (size_t) len;
 }
 
 /* write operation is skipped */
