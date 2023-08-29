@@ -66,9 +66,9 @@ int main()
 
     for (int i = 0; i <= offset; i++) {
         lseek(fd, i, SEEK_SET);
-        clock_gettime(CLOCK_MONOTONIC_RAW, &start);
+        clock_gettime(CLOCK_MONOTONIC, &start);
         long long sz = read(fd, buf, sizeof(buf));
-        clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+        clock_gettime(CLOCK_MONOTONIC, &end);
         long long ut = (long long) (end.tv_sec - start.tv_sec) * 1e9 +
                        (end.tv_nsec - start.tv_nsec);
         long long kt = write(fd, write_buf, 1);

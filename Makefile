@@ -29,10 +29,6 @@ unload:
 
 # compiler client with set its MAX_FIB_K to FIB_K
 client: client.c
-	@if [ $(FIB_K) -lt 500 ]; then \
-		$(call fib_err); \
-		exit 1; \
-	fi
 	$(CC) -o $@ $^ -DMAX_FIB_K=$(FIB_K)
 
 time: clean all
